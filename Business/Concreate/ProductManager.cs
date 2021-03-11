@@ -3,7 +3,10 @@ using Business.BusinessAspect.Autofac;
 using Business.CCS;
 using Business.Constants;
 using Business.ValidationRules.FluentValidation;
+using Core.Aspects.Autofac.Transaction;
 using Core.Aspects.Autofac.Validation;
+using Core.Aspects.Caching;
+using Core.Aspects.Performance;
 using Core.CrossCuttingConcerns.Validation;
 using Core.Utilities.Business;
 using Core.Utilities.Results;
@@ -33,6 +36,7 @@ namespace Business.Concreate
         //Claim
         [SecuredOperation("product.add, admin")]
         [ValidationAspect(typeof(ProductValidator))]
+        [CacheRemoveAspect("IProductService.Get")]
         public IResult Add(Product product)
         {
           
@@ -47,7 +51,7 @@ namespace Business.Concreate
             _productDal.Add(product);
             return new SuccessResult(Messages.ProductAdded);
         }
-
+        [CacheAspect] //key, value
         public IDataResult<List<Product>> GetAll()
         {
             //İş kodları
@@ -62,7 +66,8 @@ namespace Business.Concreate
         {
             return new SuccessDataResult<List<Product>>(_productDal.GetAll(p => p.CategoryId == id));
         }
-
+        [CacheAspect]
+        [PerformanceAspect(10)]
         public IDataResult<Product> GetById(int productId)
         {
             return new SuccessDataResult<Product>(_productDal.Get(p => p.ProductId == productId));
@@ -79,6 +84,7 @@ namespace Business.Concreate
 
         }
         [ValidationAspect(typeof(ProductValidator))]
+        [CacheRemoveAspect("IProductService.Get")]
         public IResult Update(Product product)
         {
             throw new NotImplementedException();
@@ -95,6 +101,12 @@ namespace Business.Concreate
             return new SuccessResult();
 
         }
+        [TransactionScopeAspect]
+        public IResult AddTransactionalTest(Product product)
+        {
+            return null;
+        }
+            
         //Aynı isimde ürün eklenemez.
         private IResult CheckIfProductNameExists(string productName)
         {
@@ -116,6 +128,8 @@ namespace Business.Concreate
             }
             return new SuccessResult();
         }
+
+        
 
     }
 
